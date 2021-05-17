@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-userSchema.pre("save", function (next) {
+userSchema.pre("save", async function (next) {
   const hashedPassword = await argon2.hash(this.password, { saltLength: 12 });
 
   this.password = hashedPassword;
