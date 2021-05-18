@@ -38,6 +38,8 @@ exports.register = async (req, res, next) => {
 
     await user.save();
 
+    user.password = undefined;
+
     return res.status(201).json({
       ok: true,
       user,
