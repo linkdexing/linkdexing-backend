@@ -170,6 +170,8 @@ exports.isAuthenticated = async (req, res, next) => {
 
     const user = await User.findById(data.id);
 
+    user.password = undefined;
+
     if (!user) {
       return res.status(401).json({
         ok: false,
@@ -179,6 +181,7 @@ exports.isAuthenticated = async (req, res, next) => {
 
     return res.json({
       ok: true,
+      user,
     });
   } catch (err) {
     return next(err);
