@@ -53,6 +53,8 @@ exports.getOrdersByUser = async (req, res) => {
   const { id } = req.user;
   const orders = await Order.find({
     userId: id,
+  }).sort({
+    createdAt: -1,
   });
 
   return res.json({

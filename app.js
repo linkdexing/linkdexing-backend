@@ -36,9 +36,9 @@ mongoose.connect(
   (err) => {
     if (err) {
       console.log(err);
+    } else {
+      console.log("DB Connected");
     }
-
-    console.log("DB Connected");
   }
 );
 
