@@ -41,7 +41,7 @@ exports.processOrder = async (req, res) => {
 };
 
 exports.getOrders = async (req, res) => {
-  const orders = await Order.find();
+  const orders = await Order.find().populate("user");
 
   return res.json({
     ok: true,

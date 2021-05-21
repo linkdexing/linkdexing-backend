@@ -1,51 +1,41 @@
 const argon2 = require("argon2");
 const jwt = require("jsonwebtoken");
 
+exports.isAuthenticated = async (req, res) => {
+  if (req.admin) {
+    return res.json({
+      ok: true,
+    });
+  }
+
+  return res.status(200).json({
+    ok: false,
+  });
+};
+
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    if (email === "jasmeet@gmail.com" && password === 1234567890) {
-      const token = jwt.sign({ superAdmin: true }, process.env.JWT_SECRET, {
-        expiresIn: "365d",
+    if (
+      email === process.env.ADMIN_EMAIL &&
+      password === process.env.ADMIN_PASSWORD
+    ) {
+      const token = jwt.sign({ admin: true }, process.env.JWT_ADMIN_SECRET, {
+        expiresIn: "30m",
       });
 
       return res.json({
         ok: true,
         token,
-        superAdmin: true,
-        role: "superAdmin",
+        admin: true,
       });
     }
 
-    // const existingUser = await User.findOne({
-    //   email,
-    // });
-
-    // if (!existingUser) {
-    //   return res.status(404).json({
-    //     ok: false,
-    //     message: "No user exists",
-    //   });
-    // }
-
-    // const isValid = await argon2.verify(existingUser.password, password);
-
-    // if (!isValid) {
-    //   return res.status(401).json({
-    //     ok: false,
-    //     message: "Invalid Email/Password",
-    //   });
-    // }
-
-    // const token = jwt.sign({ id: existingUser.id }, process.env.JWT_SECRET, {
-    //   expiresIn: "365d",
-    // });
-
-    // return res.json({
-    //   ok: true,
-    //   token,
-    // });
+    return res.status(404).json({
+      ok: false,
+      message: "Invalid email or password",
+    });
   } catch (err) {
     return next(err);
   }
@@ -61,7 +51,7 @@ exports.checkAuthStatus = async (req, res, next) => {
   }
   const token = authorization.split(" ")[1];
 
-  const data = jwt.verify(token, process.env.JWT_SECRET);
+  const data = jwt.verify(token, process.env.JWT_ADMIN_SECRET);
 
   if (!data) {
     return res.status(401).json({
@@ -70,51 +60,28 @@ exports.checkAuthStatus = async (req, res, next) => {
     });
   }
 
-  if (data.superAdmin) {
-    req.superAdmin = true;
+  if (data.admin) {
+    req.admin = true;
 
     return next();
   }
 
-  req.user = await User.findById(data.id);
-
-  if (!req.user) {
-    return res.status(401).json({
-      ok: false,
-      message: "Invalid token",
-    });
-  }
-
-  return next();
-};
-
-exports.isSuperAdmin = (req, res, next) => {
-  try {
-    if (!req.superAdmin) {
-      return res.status(401).json({
-        ok: false,
-        message: "Only superadmin can access this route",
-      });
-    }
-
-    return next();
-  } catch (err) {
-    return next(err);
-  }
+  return res.status(401).json({
+    ok: false,
+    message: "Invalid token",
+  });
 };
 
 exports.isAdmin = (req, res, next) => {
   try {
-    const { user } = req;
-
-    if (user.userType === "admin" && user.approved) {
-      next();
+    if (!req.admin) {
+      return res.status(401).json({
+        ok: false,
+        message: "Only admin can access this route",
+      });
     }
 
-    return res.status(401).json({
-      ok: false,
-      message: "Only admin can access this route",
-    });
+    return next();
   } catch (err) {
     return next(err);
   }

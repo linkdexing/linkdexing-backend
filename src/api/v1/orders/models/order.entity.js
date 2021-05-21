@@ -16,6 +16,7 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       required: true,
       max: 31,
+      min: 1,
     },
   },
   {
