@@ -19,6 +19,7 @@ app.use(morgan("dev"));
 
 app.use("/api/v1/users", require("./src/api/v1/users/routes"));
 app.use("/api/v1/orders", require("./src/api/v1/orders/routes"));
+app.use("/api/v1/admin", require("./src/api/v1/admin/routes"));
 
 app.use((err, req, res, next) => {
   return res.status(500).json({
