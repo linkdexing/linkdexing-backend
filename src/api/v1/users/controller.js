@@ -188,6 +188,39 @@ exports.isAuthenticated = async (req, res, next) => {
   }
 };
 
+exports.changePassword = async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+
+  const { id } = req.user;
+
+  const user = await User.findById(id);
+
+  if (!user) {
+    return res.status(404).json({
+      ok: false,
+      message: "User not found",
+    });
+  }
+
+  const isValid = await argon2.verify(user.password, oldPassword);
+
+  if (!isValid) {
+    return res.status(403).json({
+      ok: false,
+      message: "Invalid Password",
+    });
+  }
+
+  user.password = newPassword;
+
+  await user.save();
+
+  return res.json({
+    ok: true,
+    user,
+  });
+};
+
 // exports.isSuperAdmin = (req, res, next) => {
 //   try {
 //     if (!req.superAdmin) {
