@@ -112,7 +112,15 @@ exports.checkAuthStatus = async (req, res, next) => {
   }
   const token = authorization.split(" ")[1];
 
-  const data = jwt.verify(token, process.env.JWT_SECRET);
+  let data = null;
+  // if(data.admin)
+  try {
+    data = jwt.verify(token, process.env.JWT_SECRET);
+  } catch (err) {
+    data = jwt.verify(token, process.env.JWT_ADMIN_SECRET);
+    console.log("gvgvg");
+    return next();
+  }
 
   if (!data) {
     return res.status(401).json({
@@ -121,11 +129,11 @@ exports.checkAuthStatus = async (req, res, next) => {
     });
   }
 
-  //   if (data.superAdmin) {
-  //     req.superAdmin = true;
+  // if (data.superAdmin) {
+  //   req.superAdmin = true;
 
-  //     return next();
-  //   }
+  //   return next();
+  // }
 
   req.user = await User.findById(data.id);
 
