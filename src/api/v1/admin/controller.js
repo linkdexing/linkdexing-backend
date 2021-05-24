@@ -86,12 +86,3 @@ exports.isAdmin = (req, res, next) => {
     return next(err);
   }
 };
-
-exports.getOrders = async (req, res) => {
-  const orders = await Order.find().populate("user");
-
-  return res.json({
-    ok: true,
-    orders,
-  });
-};

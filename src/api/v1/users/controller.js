@@ -102,6 +102,11 @@ exports.login = async (req, res, next) => {
   }
 };
 
+// exports.search = aysnc(req,res)=>{
+//   const {email} = this.getUsers().email;
+//   User.find({email})
+// }
+
 exports.checkAuthStatus = async (req, res, next) => {
   const { authorization } = req.headers;
   if (!authorization) {
@@ -195,6 +200,8 @@ exports.isAuthenticated = async (req, res, next) => {
     return next(err);
   }
 };
+
+
 
 // exports.isSuperAdmin = (req, res, next) => {
 //   try {
