@@ -103,48 +103,52 @@ exports.login = async (req, res, next) => {
 };
 
 exports.checkAuthStatus = async (req, res, next) => {
-  const { authorization } = req.headers;
-  if (!authorization) {
-    return res.status(404).json({
-      ok: false,
-      message: "No token provided",
-    });
-  }
-  const token = authorization.split(" ")[1];
-
-  let data = null;
-  // if(data.admin)
   try {
-    data = jwt.verify(token, process.env.JWT_SECRET);
-  } catch (err) {
-    data = jwt.verify(token, process.env.JWT_ADMIN_SECRET);
-    console.log("gvgvg");
+    const { authorization } = req.headers;
+    if (!authorization) {
+      return res.status(404).json({
+        ok: false,
+        message: "No token provided",
+      });
+    }
+    const token = authorization.split(" ")[1];
+
+    let data = null;
+    // if(data.admin)
+    try {
+      data = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      data = jwt.verify(token, process.env.JWT_ADMIN_SECRET);
+      console.log("gvgvg");
+      return next();
+    }
+
+    if (!data) {
+      return res.status(401).json({
+        ok: false,
+        message: "Invalid token",
+      });
+    }
+
+    // if (data.superAdmin) {
+    //   req.superAdmin = true;
+
+    //   return next();
+    // }
+
+    req.user = await User.findById(data.id);
+
+    if (!req.user) {
+      return res.status(401).json({
+        ok: false,
+        message: "Invalid token",
+      });
+    }
+
     return next();
+  } catch (err) {
+    return next(err);
   }
-
-  if (!data) {
-    return res.status(401).json({
-      ok: false,
-      message: "Invalid token",
-    });
-  }
-
-  // if (data.superAdmin) {
-  //   req.superAdmin = true;
-
-  //   return next();
-  // }
-
-  req.user = await User.findById(data.id);
-
-  if (!req.user) {
-    return res.status(401).json({
-      ok: false,
-      message: "Invalid token",
-    });
-  }
-
-  return next();
 };
 
 exports.isAuthenticated = async (req, res, next) => {
