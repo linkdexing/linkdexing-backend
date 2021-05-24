@@ -1,10 +1,18 @@
 const router = require("express").Router();
-const { register, login, isAuthenticated } = require("./controller");
+const {
+  register,
+  login,
+  isAuthenticated,
+  changePassword,
+  checkAuthStatus,
+} = require("./controller");
 
 router.route("/").post(register);
 
 router.post("/login", login);
 
 router.get("/isAuthenticated", isAuthenticated);
+
+router.post("/change-password", checkAuthStatus, changePassword);
 
 module.exports = router;
