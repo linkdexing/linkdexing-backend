@@ -4,7 +4,12 @@ const User = require("./models/user.entity");
 
 exports.getUsers = async (req, res, next) => {
   try {
-    const users = await User.find();
+    var q = req.query.q;
+    const users = await User.find({
+      email: {
+        $regex: new RegExp(q),
+      },
+    });
 
     return res.status(200).json({
       ok: true,
@@ -200,8 +205,6 @@ exports.isAuthenticated = async (req, res, next) => {
     return next(err);
   }
 };
-
-
 
 // exports.isSuperAdmin = (req, res, next) => {
 //   try {
