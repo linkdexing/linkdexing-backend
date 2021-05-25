@@ -62,3 +62,40 @@ exports.getOrdersByUser = async (req, res) => {
     orders,
   });
 };
+
+exports.getOrderLinks = async (req, res) => {
+  const { orderId } = req.params;
+
+  const order = await Order.findById(orderId);
+
+  if (!order) {
+    return res.status(404).json({
+      ok: false,
+      message: "Invalid order id",
+    });
+  }
+
+  let { links } = order;
+
+  links = links.split("\n");
+
+  return res.json({
+    ok: true,
+    links,
+  });
+};
+
+exports.getLinksByDripfeed = async (req, res, next) => {
+  const { dripfeed } = req.params;
+
+  const orders = await Order.find({
+    dripfeed,
+  }).select("links");
+
+  const links = orders.map((order) => order.links.split("\n")).flat();
+
+  return res.json({
+    ok: true,
+    links,
+  });
+};

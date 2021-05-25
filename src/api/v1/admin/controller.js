@@ -21,15 +21,20 @@ exports.login = async (req, res, next) => {
       email === process.env.ADMIN_EMAIL &&
       password === process.env.ADMIN_PASSWORD
     ) {
-      const token = jwt.sign({ admin: true }, process.env.JWT_ADMIN_SECRET, {
-        expiresIn: "30m",
-      });
+      try {
+        const token = jwt.sign({ admin: true }, process.env.JWT_ADMIN_SECRET, {
+          expiresIn: "30m",
+        });
 
-      return res.json({
-        ok: true,
-        token,
-        admin: true,
-      });
+        return res.json({
+          ok: true,
+          token,
+          admin: true,
+        });
+      } catch (err) {
+        console.log("errrrr", err);
+        return next(err);
+      }
     }
 
     return res.status(404).json({
@@ -37,39 +42,44 @@ exports.login = async (req, res, next) => {
       message: "Invalid email or password",
     });
   } catch (err) {
+    console.log("error message", err);
     return next(err);
   }
 };
 
 exports.checkAuthStatus = async (req, res, next) => {
-  const { authorization } = req.headers;
-  if (!authorization) {
-    return res.status(404).json({
-      ok: false,
-      message: "No token provided",
-    });
-  }
-  const token = authorization.split(" ")[1];
+  try {
+    const { authorization } = req.headers;
+    if (!authorization) {
+      return res.status(404).json({
+        ok: false,
+        message: "No token provided",
+      });
+    }
+    const token = authorization.split(" ")[1];
 
-  const data = jwt.verify(token, process.env.JWT_ADMIN_SECRET);
+    const data = jwt.verify(token, process.env.JWT_ADMIN_SECRET);
 
-  if (!data) {
+    if (!data) {
+      return res.status(401).json({
+        ok: false,
+        message: "Invalid token",
+      });
+    }
+
+    if (data.admin) {
+      req.admin = true;
+
+      return next();
+    }
+
     return res.status(401).json({
       ok: false,
       message: "Invalid token",
     });
+  } catch (err) {
+    return next(err);
   }
-
-  if (data.admin) {
-    req.admin = true;
-
-    return next();
-  }
-
-  return res.status(401).json({
-    ok: false,
-    message: "Invalid token",
-  });
 };
 
 exports.isAdmin = (req, res, next) => {
