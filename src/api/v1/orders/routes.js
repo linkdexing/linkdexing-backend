@@ -1,4 +1,4 @@
-const { checkAuthStatus } = require("../users/controller");
+const { checkAuthStatus, isNotRestrict } = require("../users/controller");
 const {
   getOrdersByUser,
   createOrder,
@@ -9,7 +9,7 @@ const {
 
 const router = require("express").Router();
 
-router.get("/all", checkAuthStatus, getOrders);
+router.get("/all", checkAuthStatus, isNotRestrict, getOrders);
 
 router.get("/dripfeed/:dripfeed", checkAuthStatus, getLinksByDripfeed);
 
@@ -18,6 +18,6 @@ router.get("/:orderId", checkAuthStatus, getOrderLinks);
 router
   .route("/")
   .get(checkAuthStatus, getOrdersByUser)
-  .post(checkAuthStatus, createOrder);
+  .post(checkAuthStatus, isNotRestrict, createOrder);
 
 module.exports = router;

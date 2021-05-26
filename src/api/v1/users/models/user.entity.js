@@ -19,6 +19,10 @@ const userSchema = new mongoose.Schema(
       required: true,
       validate: /^.{5,}$/,
     },
+    isRestrict: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

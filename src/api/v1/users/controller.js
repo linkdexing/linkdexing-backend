@@ -1,6 +1,7 @@
 const argon2 = require("argon2");
 const jwt = require("jsonwebtoken");
 const User = require("./models/user.entity");
+const Order = require("../orders/models/order.entity");
 
 exports.getUsers = async (req, res, next) => {
   try {
@@ -14,6 +15,26 @@ exports.getUsers = async (req, res, next) => {
     return res.status(200).json({
       ok: true,
       users,
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.deleteUser = async (req, res, next) => {
+  try {
+    var q = req.params.q;
+    const user = await User.findOne({ email: q });
+    await Order.deleteMany({ userId: user._id });
+
+    User.deleteOne({ email: q }, function (err) {
+      if (err) return next(err);
+      else {
+        console.log("User Deleted");
+        return res.status(200).json({
+          ok: true,
+        });
+      }
     });
   } catch (err) {
     return next(err);
@@ -156,6 +177,35 @@ exports.checkAuthStatus = async (req, res, next) => {
     }
 
     return next();
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.isNotRestrict = async (req, res, next) => {
+  try {
+    if (req.user.isRestrict) {
+      return res.status(403).json({
+        ok: false,
+        message: "Account Restricted",
+      });
+    } else {
+      return next();
+    }
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.restrictUser = async (req, res, next) => {
+  try {
+    var id = req.params.id;
+    const user = await User.findById(id);
+    user.isRestrict = true;
+    await user.save();
+    return res.status(200).json({
+      ok: true,
+    });
   } catch (err) {
     return next(err);
   }
