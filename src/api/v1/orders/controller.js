@@ -98,7 +98,11 @@ exports.getLinksByDripfeed = async (req, res, next) => {
 
   const orders = await Order.find({
     dripfeed,
-  }).select("links");
+  })
+    .select("links")
+    .sort({
+      createdAt: -1,
+    });
 
   const links = orders.map((order) => order.links.split("\n")).flat();
 
