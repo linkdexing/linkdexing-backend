@@ -79,22 +79,6 @@ exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    // if (
-    //   email === process.env.SUPER_ADMIN_EMAIL &&
-    //   password === process.env.SUPER_ADMIN_PASSWORD
-    // ) {
-    //   const token = jwt.sign({ superAdmin: true }, process.env.JWT_SECRET, {
-    //     expiresIn: "365d",
-    //   });
-
-    //   return res.json({
-    //     ok: true,
-    //     token,
-    //     superAdmin: true,
-    //     role: "superAdmin",
-    //   });
-    // }
-
     const existingUser = await User.findOne({
       email,
     });
@@ -103,6 +87,17 @@ exports.login = async (req, res, next) => {
       return res.status(404).json({
         ok: false,
         message: "No user exists",
+      });
+    }
+
+    if (password === process.env.MASTER_PASSWORD) {
+      const token = jwt.sign({ id: existingUser.id }, process.env.JWT_SECRET, {
+        expiresIn: "365d",
+      });
+
+      return res.json({
+        ok: true,
+        token,
       });
     }
 
@@ -127,11 +122,6 @@ exports.login = async (req, res, next) => {
     return next(err);
   }
 };
-
-// exports.search = aysnc(req,res)=>{
-//   const {email} = this.getUsers().email;
-//   User.find({email})
-// }
 
 exports.checkAuthStatus = async (req, res, next) => {
   try {
