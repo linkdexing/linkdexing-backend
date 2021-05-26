@@ -23,6 +23,10 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    totalLinks: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,

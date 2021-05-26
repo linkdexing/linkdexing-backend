@@ -1,3 +1,4 @@
+const User = require("../users/models/user.entity");
 const Order = require("./models/order.entity");
 
 exports.createOrder = async (req, res) => {
@@ -11,6 +12,13 @@ exports.createOrder = async (req, res) => {
   });
 
   await order.save();
+
+  const linksCount = links.split("\n").length;
+
+  const user = await User.findById(id);
+  user.totalLinks += linksCount;
+
+  await user.save();
 
   return res.status(201).json({
     ok: true,
