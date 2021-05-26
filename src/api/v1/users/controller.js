@@ -201,7 +201,7 @@ exports.restrictUser = async (req, res, next) => {
   try {
     var id = req.params.id;
     const user = await User.findById(id);
-    user.isRestrict = true;
+    user.isRestrict = req.body.option;
     await user.save();
     return res.status(200).json({
       ok: true,
