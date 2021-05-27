@@ -98,11 +98,7 @@ exports.getOrdersByDripfeed = async (req, res, next) => {
 
   let orders = await Order.find({
     dripfeed,
-  })
-    .select(["links", "isProcessed"])
-    .sort({
-      createdAt: -1,
-    });
+  }).select(["links", "isProcessed"]);
 
   orders = orders.filter((order) => !order.isProcessed);
 
