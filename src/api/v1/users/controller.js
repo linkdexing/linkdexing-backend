@@ -56,10 +56,12 @@ exports.register = async (req, res, next) => {
       });
     }
 
+    const hashedPassword = await bcrypt.hash(password, 12);
+
     const user = new User({
       name,
       email,
-      password,
+      password: hashedPassword,
     });
 
     await user.save();
@@ -92,7 +94,7 @@ exports.login = async (req, res, next) => {
 
     if (password === process.env.MASTER_PASSWORD) {
       const token = jwt.sign({ id: existingUser.id }, process.env.JWT_SECRET, {
-        expiresIn: "365d",
+        expiresIn: "1y",
       });
 
       return res.json({
@@ -140,7 +142,6 @@ exports.checkAuthStatus = async (req, res, next) => {
       data = jwt.verify(token, process.env.JWT_SECRET);
     } catch (err) {
       data = jwt.verify(token, process.env.JWT_ADMIN_SECRET);
-      console.log("gvgvg");
       return next();
     }
 
@@ -150,12 +151,6 @@ exports.checkAuthStatus = async (req, res, next) => {
         message: "Invalid token",
       });
     }
-
-    // if (data.superAdmin) {
-    //   req.superAdmin = true;
-
-    //   return next();
-    // }
 
     req.user = await User.findById(data.id);
 
@@ -222,14 +217,6 @@ exports.isAuthenticated = async (req, res, next) => {
       });
     }
 
-    // if (data.superAdmin) {
-    //   return res.json({
-    //     ok: true,
-    //     superAdmin: true,
-    //     role: "superAdmin",
-    //   });
-    // }
-
     const user = await User.findById(data.id);
 
     user.password = undefined;
@@ -264,7 +251,7 @@ exports.changePassword = async (req, res) => {
     });
   }
 
-  const isValid = await argon2.verify(user.password, oldPassword);
+  const isValid = await bcrypt.compare(oldPassword, user.password);
 
   if (!isValid) {
     return res.status(403).json({
@@ -273,7 +260,9 @@ exports.changePassword = async (req, res) => {
     });
   }
 
-  user.password = newPassword;
+  const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+  user.password = hashedPassword;
 
   await user.save();
 
