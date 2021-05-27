@@ -27,24 +27,24 @@ exports.createOrder = async (req, res) => {
 };
 
 exports.processOrder = async (req, res) => {
-  const { orderId } = req.body;
+  const { orderIds } = req.body;
 
-  const order = await Order.findById(orderId);
+  for (orderId of orderIds) {
+    const order = await Order.findById(orderId);
 
-  if (!order) {
-    return res.status(404).json({
-      ok: false,
-      message: "Order not found",
-    });
+    if (!order) {
+      return res.status(404).json({
+        ok: false,
+        message: "Order not found",
+      });
+    }
+
+    order.isProcessed = true;
+    await order.save();
   }
-
-  order.isProcessed = true;
-
-  await order.save();
 
   return res.json({
     ok: true,
-    order,
   });
 };
 
@@ -93,21 +93,21 @@ exports.getOrderLinks = async (req, res) => {
   });
 };
 
-exports.getLinksByDripfeed = async (req, res, next) => {
+exports.getOrdersByDripfeed = async (req, res, next) => {
   const { dripfeed } = req.params;
 
-  const orders = await Order.find({
+  let orders = await Order.find({
     dripfeed,
   })
-    .select("links")
+    .select(["links", "isProcessed"])
     .sort({
       createdAt: -1,
     });
 
-  const links = orders.map((order) => order.links.split("\n")).flat();
+  orders = orders.filter((order) => !order.isProcessed);
 
   return res.json({
     ok: true,
-    links,
+    orders,
   });
 };

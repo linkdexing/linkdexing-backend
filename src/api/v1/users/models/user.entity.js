@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const argon2 = require("argon2");
+const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema(
   {
@@ -34,7 +34,7 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.pre("save", async function (next) {
-  const hashedPassword = await argon2.hash(this.password, { saltLength: 12 });
+  const hashedPassword = await bcrypt.hash(this.password, 12);
 
   this.password = hashedPassword;
 

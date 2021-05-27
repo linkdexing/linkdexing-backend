@@ -4,14 +4,17 @@ const {
   createOrder,
   getOrders,
   getOrderLinks,
-  getLinksByDripfeed,
+  getOrdersByDripfeed,
+  processOrder,
 } = require("./controller");
 
 const router = require("express").Router();
 
 router.get("/all", checkAuthStatus, isNotRestrict, getOrders);
 
-router.get("/dripfeed/:dripfeed", checkAuthStatus, getLinksByDripfeed);
+router.get("/dripfeed/:dripfeed", checkAuthStatus, getOrdersByDripfeed);
+
+router.post("/process", checkAuthStatus, processOrder);
 
 router.get("/:orderId", checkAuthStatus, getOrderLinks);
 

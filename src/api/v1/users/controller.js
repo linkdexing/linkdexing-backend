@@ -1,4 +1,4 @@
-const argon2 = require("argon2");
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("./models/user.entity");
 const Order = require("../orders/models/order.entity");
@@ -101,7 +101,7 @@ exports.login = async (req, res, next) => {
       });
     }
 
-    const isValid = await argon2.verify(existingUser.password, password);
+    const isValid = await bcrypt.compare(password, existingUser.password);
 
     if (!isValid) {
       return res.status(401).json({
