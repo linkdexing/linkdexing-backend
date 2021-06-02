@@ -10,6 +10,8 @@ exports.getUsers = async (req, res, next) => {
       email: {
         $regex: new RegExp(q),
       },
+    }).sort({
+      totalLinks: -1,
     });
 
     return res.status(200).json({
@@ -271,52 +273,3 @@ exports.changePassword = async (req, res) => {
     user,
   });
 };
-
-// exports.isSuperAdmin = (req, res, next) => {
-//   try {
-//     if (!req.superAdmin) {
-//       return res.status(401).json({
-//         ok: false,
-//         message: "Only superadmin can access this route",
-//       });
-//     }
-
-//     return next();
-//   } catch (err) {
-//     return next(err);
-//   }
-// };
-
-// exports.isAdmin = (req, res, next) => {
-//   try {
-//     const { user } = req;
-
-//     if (user.userType === "admin" && user.approved) {
-//       next();
-//     }
-
-//     return res.status(401).json({
-//       ok: false,
-//       message: "Only admin can access this route",
-//     });
-//   } catch (err) {
-//     return next(err);
-//   }
-// };
-
-// exports.isUser = (req, res, next) => {
-//   try {
-//     const { user } = req;
-
-//     if (user.userType === "user") {
-//       return next();
-//     }
-
-//     return res.status(401).json({
-//       ok: false,
-//       message: "Only user can access this route",
-//     });
-//   } catch (err) {
-//     return next(err);
-//   }
-// };
