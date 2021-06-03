@@ -1,7 +1,25 @@
 const bcrypt = require("bcryptjs");
+const axios = require("axios");
 const jwt = require("jsonwebtoken");
 const User = require("./models/user.entity");
 const Order = require("../orders/models/order.entity");
+
+exports.verifyUser = async (req, res, next) => {
+  const { token } = req.body;
+
+  const VERIFY_URL = `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${token}`;
+  const responseData = (await axios.post(VERIFY_URL)).data;
+
+  if (!responseData.success) {
+    return res.json({
+      ok: false,
+    });
+  }
+
+  return res.json({
+    ok: true,
+  });
+};
 
 exports.getUsers = async (req, res, next) => {
   try {

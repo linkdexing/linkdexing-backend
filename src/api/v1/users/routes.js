@@ -9,9 +9,12 @@ const {
   deleteUser,
   isNotRestrict,
   restrictUser,
+  verifyUser,
 } = require("./controller");
 
 router.get("/search", checkAuthStatus, getUsers);
+
+router.post("/verify", verifyUser);
 
 router.route("/").post(register);
 
