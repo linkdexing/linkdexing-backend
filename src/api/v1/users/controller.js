@@ -1,8 +1,11 @@
 const bcrypt = require("bcryptjs");
 const axios = require("axios");
+const { v4 } = require("uuid");
+var SibApiV3Sdk = require("sib-api-v3-sdk");
 const jwt = require("jsonwebtoken");
 const User = require("./models/user.entity");
 const Order = require("../orders/models/order.entity");
+const sib = require("../../../utils/sib");
 
 exports.verifyUser = async (req, res, next) => {
   const { token } = req.body;
@@ -290,4 +293,73 @@ exports.changePassword = async (req, res) => {
     ok: true,
     user,
   });
+};
+
+exports.sendForgotPasswordLink = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({
+        ok: false,
+        message: "User doesn't exist. Please check email",
+      });
+    }
+
+    let sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+
+    const userToken = v4();
+
+    user.forgotPasswordToken = userToken;
+
+    await user.save();
+
+    sendSmtpEmail.sender = { email: "noreply@linkdexing.com" };
+    sendSmtpEmail.to = [{ name: "Prateek", email: "prateeksoni300@gmail.com" }];
+    sendSmtpEmail.subject = "Reset Password Link";
+    sendSmtpEmail.textContent = `Hi there! We received a password reset request. If that was not you, please contact support. \nYour reset link is: http://localhost:3000/reset-password?id=${user.id}&token=${userToken}`;
+
+    await sib.sendTransacEmail(sendSmtpEmail);
+
+    return res.json({
+      ok: true,
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const { token, id, newPassword } = req.body;
+
+    const user = await User.findById(id);
+
+    if (!user.forgotPasswordToken) {
+      return res.status(401).json({
+        ok: false,
+        message: "No reset password request authorized",
+      });
+    }
+
+    if (user.forgotPasswordToken !== token) {
+      return res.status(403).json({
+        ok: false,
+        message: "Invalid token provided",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    user.password = hashedPassword;
+    user.forgotPasswordToken = undefined;
+    await user.save();
+
+    return res.json({
+      ok: true,
+    });
+  } catch (err) {
+    return next(err);
+  }
 };
