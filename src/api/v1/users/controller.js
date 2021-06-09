@@ -140,9 +140,19 @@ exports.login = async (req, res, next) => {
       expiresIn: "365d",
     });
 
+    if (existingUser.otpSecret) {
+      return res.status(200).json({
+        ok: true,
+        user: existingUser,
+        token,
+        verified: false,
+      });
+    }
+
     return res.json({
       ok: true,
       token,
+      verified: true,
     });
   } catch (err) {
     return next(err);
@@ -249,6 +259,12 @@ exports.isAuthenticated = async (req, res, next) => {
       return res.status(401).json({
         ok: false,
         message: "Invalid token",
+      });
+    }
+
+    if (user.otpSecret) {
+      return res.status(500).json({
+        ok: false,
       });
     }
 
@@ -419,6 +435,8 @@ exports.verifyOtp = async (req, res, next) => {
         message: "No verification request found",
       });
     }
+
+    console.log({ otp, user });
 
     const isValid = totp.verify({ token: otp, secret: user.otpSecret });
 
