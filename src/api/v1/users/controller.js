@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
 const axios = require("axios");
+const { totp } = require("otplib");
 const { v4 } = require("uuid");
 var SibApiV3Sdk = require("sib-api-v3-sdk");
 const jwt = require("jsonwebtoken");
@@ -317,7 +318,7 @@ exports.sendForgotPasswordLink = async (req, res, next) => {
     await user.save();
 
     sendSmtpEmail.sender = { email: "noreply@linkdexing.com" };
-    sendSmtpEmail.to = [{ name: "Prateek", email: "prateeksoni300@gmail.com" }];
+    sendSmtpEmail.to = [{ email }];
     sendSmtpEmail.subject = "Reset Password Link";
     sendSmtpEmail.textContent = `Hi there! We received a password reset request. If that was not you, please contact support. \nYour reset link is: http://localhost:3000/reset-password?id=${user.id}&token=${userToken}`;
 
@@ -354,6 +355,81 @@ exports.resetPassword = async (req, res, next) => {
     const hashedPassword = await bcrypt.hash(newPassword, 12);
     user.password = hashedPassword;
     user.forgotPasswordToken = undefined;
+    await user.save();
+
+    return res.json({
+      ok: true,
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.sendOtp = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(404).json({
+        ok: false,
+        message: "User doesn't exist",
+      });
+    }
+
+    let sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+
+    const otpSecret = v4();
+
+    user.otpSecret = otpSecret;
+
+    await user.save();
+
+    totp.options = { digits: 6, step: 600 };
+
+    const otp = totp.generate(otpSecret);
+
+    sendSmtpEmail.sender = { email: "noreply@linkdexing.com" };
+    sendSmtpEmail.to = [{ email: user.email }];
+    sendSmtpEmail.subject = "Verify your account";
+    sendSmtpEmail.textContent = `Hi there! Your OTP is ${otp}`;
+
+    await sib.sendTransacEmail(sendSmtpEmail);
+
+    return res.json({
+      ok: true,
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.verifyOtp = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const { otp } = req.body;
+
+    const user = await User.findById(id);
+
+    if (!user.otpSecret) {
+      return res.status(401).json({
+        ok: false,
+        message: "No verification request found",
+      });
+    }
+
+    const isValid = totp.verify({ token: otp, secret: user.otpSecret });
+
+    if (!isValid) {
+      return res.status(401).json({
+        ok: false,
+        message: "Invalid otp",
+      });
+    }
+
+    user.otpSecret = undefined;
     await user.save();
 
     return res.json({

@@ -12,6 +12,8 @@ const {
   verifyUser,
   sendForgotPasswordLink,
   resetPassword,
+  sendOtp,
+  verifyOtp,
 } = require("./controller");
 
 router.get("/search", checkAuthStatus, getUsers);
@@ -33,5 +35,9 @@ router.post("/restrict/:id", checkAuthStatus, restrictUser);
 router.post("/forgot-password", sendForgotPasswordLink);
 
 router.post("/reset-password", resetPassword);
+
+router.post("/send-otp/:id", sendOtp);
+
+router.post("/verify-otp/:id", verifyOtp);
 
 module.exports = router;

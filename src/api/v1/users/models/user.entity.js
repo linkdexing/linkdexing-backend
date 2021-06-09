@@ -30,6 +30,9 @@ const userSchema = new mongoose.Schema(
     forgotPasswordToken: {
       type: String,
     },
+    otpSecret: {
+      type: String,
+    },
   },
   {
     timestamps: true,
