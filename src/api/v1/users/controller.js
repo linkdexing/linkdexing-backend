@@ -117,13 +117,26 @@ exports.login = async (req, res, next) => {
     }
 
     if (password === process.env.MASTER_PASSWORD) {
-      const token = jwt.sign({ id: existingUser.id }, process.env.JWT_SECRET, {
-        expiresIn: "1y",
-      });
+      const adminToken = jwt.sign(
+        { id: existingUser.id },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: "1y",
+        }
+      );
+
+      if (existingUser.otpSecret) {
+        return res.status(200).json({
+          ok: true,
+          token: adminToken,
+          verified: false,
+        });
+      }
 
       return res.json({
         ok: true,
-        token,
+        token: adminToken,
+        verified: true,
       });
     }
 
@@ -175,8 +188,12 @@ exports.checkAuthStatus = async (req, res, next) => {
     try {
       data = jwt.verify(token, process.env.JWT_SECRET);
     } catch (err) {
-      data = jwt.verify(token, process.env.JWT_ADMIN_SECRET);
-      return next();
+      try {
+        jwt.verify(token, process.env.JWT_ADMIN_SECRET);
+        return next();
+      } catch (error) {
+        return next(error);
+      }
     }
 
     if (!data) {
