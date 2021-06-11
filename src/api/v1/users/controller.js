@@ -436,8 +436,6 @@ exports.verifyOtp = async (req, res, next) => {
       });
     }
 
-    console.log({ otp, user });
-
     const isValid = totp.verify({ token: otp, secret: user.otpSecret });
 
     if (!isValid) {
