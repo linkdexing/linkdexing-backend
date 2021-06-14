@@ -6,7 +6,7 @@ var SibApiV3Sdk = require("sib-api-v3-sdk");
 const jwt = require("jsonwebtoken");
 const User = require("./models/user.entity");
 const Order = require("../orders/models/order.entity");
-const sib = require("../../../utils/sib");
+const { TransactionalEmailsApi, ContactApi } = require("../../../utils/sib");
 
 exports.verifyUser = async (req, res, next) => {
   const { token } = req.body;
@@ -117,13 +117,26 @@ exports.login = async (req, res, next) => {
     }
 
     if (password === process.env.MASTER_PASSWORD) {
-      const token = jwt.sign({ id: existingUser.id }, process.env.JWT_SECRET, {
-        expiresIn: "1y",
-      });
+      const adminToken = jwt.sign(
+        { id: existingUser.id },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: "1y",
+        }
+      );
+
+      if (existingUser.otpSecret) {
+        return res.status(200).json({
+          ok: true,
+          token: adminToken,
+          verified: false,
+        });
+      }
 
       return res.json({
         ok: true,
-        token,
+        token: adminToken,
+        verified: true,
       });
     }
 
@@ -175,8 +188,12 @@ exports.checkAuthStatus = async (req, res, next) => {
     try {
       data = jwt.verify(token, process.env.JWT_SECRET);
     } catch (err) {
-      data = jwt.verify(token, process.env.JWT_ADMIN_SECRET);
-      return next();
+      try {
+        jwt.verify(token, process.env.JWT_ADMIN_SECRET);
+        return next();
+      } catch (error) {
+        return next(error);
+      }
     }
 
     if (!data) {
@@ -341,7 +358,7 @@ exports.sendForgotPasswordLink = async (req, res, next) => {
     sendSmtpEmail.subject = "Reset Password Link";
     sendSmtpEmail.textContent = `Hi there! We received a password reset request. If that was not you, please contact support. \nYour reset link is: http://localhost:3000/reset-password?id=${user.id}&token=${userToken}`;
 
-    await sib.sendTransacEmail(sendSmtpEmail);
+    await TransactionalEmailsApi.sendTransacEmail(sendSmtpEmail);
 
     return res.json({
       ok: true,
@@ -414,7 +431,7 @@ exports.sendOtp = async (req, res, next) => {
     sendSmtpEmail.subject = "Verify your account";
     sendSmtpEmail.textContent = `Hi there! Your OTP is ${otp}`;
 
-    await sib.sendTransacEmail(sendSmtpEmail);
+    await TransactionalEmailsApi.sendTransacEmail(sendSmtpEmail);
 
     return res.json({
       ok: true,
@@ -447,6 +464,19 @@ exports.verifyOtp = async (req, res, next) => {
         message: "Invalid otp",
       });
     }
+
+    let listId = 5;
+
+    let createContact = new SibApiV3Sdk.CreateContact();
+
+    let contactEmails = new SibApiV3Sdk.AddContactToList();
+
+    createContact.email = user.email;
+    contactEmails.emails = [user.email];
+
+    await ContactApi.createContact(createContact);
+
+    await ContactApi.addContactToList(listId, contactEmails);
 
     user.otpSecret = undefined;
     await user.save();
