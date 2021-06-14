@@ -280,7 +280,7 @@ exports.isAuthenticated = async (req, res, next) => {
     }
 
     if (user.otpSecret) {
-      return res.status(500).json({
+      return res.status(200).json({
         ok: false,
       });
     }
