@@ -236,7 +236,7 @@ exports.isAuthenticated = async (req, res, next) => {
 
     const token = authorization.split(" ")[1];
     if (token === "null" || token === undefined || token === "") {
-      return res.status(401).json({
+      return res.status(200).json({
         ok: false,
         message: "Invalid token",
       });
@@ -263,14 +263,17 @@ exports.isAuthenticated = async (req, res, next) => {
     }
 
     if (user.otpSecret) {
-      return res.status(500).json({
+      return res.status(200).json({
         ok: false,
+        user,
+        verified: false,
       });
     }
 
     return res.json({
       ok: true,
       user,
+      verified: true,
     });
   } catch (err) {
     return next(err);
