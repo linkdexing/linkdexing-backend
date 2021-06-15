@@ -251,6 +251,13 @@ exports.isAuthenticated = async (req, res, next) => {
   try {
     const { authorization } = req.headers;
 
+    if (!authorization) {
+      return res.status(404).json({
+        ok: false,
+        message: "No token provided",
+      });
+    }
+
     const token = authorization.split(" ")[1];
     if (token === "null" || token === undefined || token === "") {
       return res.status(200).json({
