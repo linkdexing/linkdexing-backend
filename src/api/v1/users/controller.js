@@ -309,36 +309,40 @@ exports.isAuthenticated = async (req, res, next) => {
 
 // Change password in Dashboard
 exports.changePassword = async (req, res) => {
-  const { oldPassword, newPassword } = req.body;
+  try {
+    const { oldPassword, newPassword } = req.body;
 
-  const { id } = req.user;
+    const { id } = req.user;
 
-  const user = await User.findById(id);
+    const user = await User.findById(id);
 
-  if (!user) {
-    return res.status(404).json({
-      ok: false,
-      message: "User not found",
+    if (!user) {
+      return res.status(404).json({
+        ok: false,
+        message: "User not found",
+      });
+    }
+
+    const isValid = await bcrypt.compare(oldPassword, user.password);
+
+    if (!isValid) {
+      res.status(403);
+      throw new Error("Old Password Incorrect");
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    user.password = hashedPassword;
+
+    await user.save();
+
+    return res.json({
+      ok: true,
+      user,
     });
+  } catch (err) {
+    return next(err);
   }
-
-  const isValid = await bcrypt.compare(oldPassword, user.password);
-
-  if (!isValid) {
-    res.status(403);
-    throw new Error("Old Password Incorrect");
-  }
-
-  const hashedPassword = await bcrypt.hash(newPassword, 12);
-
-  user.password = hashedPassword;
-
-  await user.save();
-
-  return res.json({
-    ok: true,
-    user,
-  });
 };
 
 // Send Forgot Password link
@@ -482,6 +486,12 @@ exports.verifyOtp = async (req, res, next) => {
     let contactEmails = new SibApiV3Sdk.AddContactToList();
 
     createContact.email = user.email;
+    const names = user.name.trim().split(" ");
+    if (names.length === 1) {
+      createContact.attributes = { FIRSTNAME: names[0] };
+    } else {
+      createContact.attributes = { FIRSTNAME: names[0], LASTNAME: names[1] };
+    }
     contactEmails.emails = [user.email];
 
     await ContactApi.createContact(createContact);
