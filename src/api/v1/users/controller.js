@@ -308,7 +308,7 @@ exports.isAuthenticated = async (req, res, next) => {
 };
 
 // Change password in Dashboard
-exports.changePassword = async (req, res) => {
+exports.changePassword = async (req, res, next) => {
   try {
     const { oldPassword, newPassword } = req.body;
 
@@ -327,7 +327,7 @@ exports.changePassword = async (req, res) => {
 
     if (!isValid) {
       res.status(403);
-      throw new Error("Old Password Incorrect");
+      throw new Error("Old Password is Incorrect");
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 12);

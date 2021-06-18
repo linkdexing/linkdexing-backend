@@ -31,7 +31,6 @@ exports.login = async (req, res, next) => {
           admin: true,
         });
       } catch (err) {
-        console.log("errrrr", err);
         return next(err);
       }
     }
@@ -41,7 +40,6 @@ exports.login = async (req, res, next) => {
       message: "Invalid email or password",
     });
   } catch (err) {
-    console.log("error message", err);
     return next(err);
   }
 };
