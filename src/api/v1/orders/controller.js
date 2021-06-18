@@ -32,7 +32,7 @@ exports.createOrder = async (req, res) => {
 exports.processOrder = async (req, res) => {
   const { orderIds } = req.body;
 
-  for (orderId of orderIds) {
+  for (const orderId of orderIds) {
     const order = await Order.findById(orderId);
 
     if (!order) {
