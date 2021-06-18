@@ -371,7 +371,7 @@ exports.sendForgotPasswordLink = async (req, res, next) => {
     sendSmtpEmail.sender = { email: "noreply@linkdexing.com" };
     sendSmtpEmail.to = [{ email }];
     sendSmtpEmail.subject = "Reset Password Link";
-    sendSmtpEmail.textContent = `Hi there! We received a password reset request. If that was not you, please contact support. \nYour reset link is: http://localhost:3000/reset-password?id=${user.id}&token=${userToken}`;
+    sendSmtpEmail.textContent = `Hi there! We received a password reset request. If that was not you, please contact support. \nYour reset link is: ${process.env.FRONTEND_URL}/reset-password?id=${user.id}&token=${userToken}`;
 
     await TransactionalEmailsApi.sendTransacEmail(sendSmtpEmail);
 
