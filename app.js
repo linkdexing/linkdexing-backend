@@ -23,10 +23,12 @@ app.use("/api/v1/orders", require("./src/api/v1/orders/routes"));
 app.use("/api/v1/admin", require("./src/api/v1/admin/routes"));
 
 app.use((err, req, res, next) => {
-  console.log(err);
-  return res.status(500).json({
+  if (res.statusCode === 200) {
+    res.status(500);
+  }
+  return res.json({
     ok: false,
-    error: err.message,
+    message: err.message,
   });
 });
 

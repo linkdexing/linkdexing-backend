@@ -1,6 +1,7 @@
 const User = require("../users/models/user.entity");
 const Order = require("./models/order.entity");
 
+// Create order
 exports.createOrder = async (req, res) => {
   const { links, dripfeed } = req.body;
   const { id } = req.user;
@@ -13,6 +14,7 @@ exports.createOrder = async (req, res) => {
 
   await order.save();
 
+  // Total Number of links
   const linksCount = links.split("\n").length;
 
   const user = await User.findById(id);
@@ -26,6 +28,7 @@ exports.createOrder = async (req, res) => {
   });
 };
 
+// Process order in Admin (order completed)
 exports.processOrder = async (req, res) => {
   const { orderIds } = req.body;
 

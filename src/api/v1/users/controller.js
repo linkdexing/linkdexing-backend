@@ -8,23 +8,27 @@ const User = require("./models/user.entity");
 const Order = require("../orders/models/order.entity");
 const { TransactionalEmailsApi, ContactApi } = require("../../../utils/sib");
 
+// Verification of user through Recaptcha
 exports.verifyUser = async (req, res, next) => {
-  const { token } = req.body;
+  try {
+    const { token } = req.body;
 
-  const VERIFY_URL = `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${token}`;
-  const responseData = (await axios.post(VERIFY_URL)).data;
+    const VERIFY_URL = `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${token}`;
+    const responseData = (await axios.post(VERIFY_URL)).data;
 
-  if (!responseData.success) {
+    if (!responseData.success) {
+      throw new Error("Recaptcha not verified");
+    }
+
     return res.json({
-      ok: false,
+      ok: true,
     });
+  } catch (err) {
+    return next(err);
   }
-
-  return res.json({
-    ok: true,
-  });
 };
 
+// Get users by email
 exports.getUsers = async (req, res, next) => {
   try {
     var q = req.query.q;
@@ -45,18 +49,22 @@ exports.getUsers = async (req, res, next) => {
   }
 };
 
+// Delete user by email
 exports.deleteUser = async (req, res, next) => {
   try {
     var q = req.params.q;
+    // Find by email
     const user = await User.findOne({ email: q });
+    // Delete orders of the user by user._id
     await Order.deleteMany({ userId: user._id });
 
+    // Delete user by email
     User.deleteOne({ email: q }, function (err) {
       if (err) return next(err);
       else {
-        console.log("User Deleted");
         return res.status(200).json({
           ok: true,
+          message: "User Deleted",
         });
       }
     });
@@ -65,6 +73,7 @@ exports.deleteUser = async (req, res, next) => {
   }
 };
 
+// Register the user
 exports.register = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
@@ -73,11 +82,10 @@ exports.register = async (req, res, next) => {
       email,
     });
 
+    // Existing user
     if (existingUser) {
-      return res.status(409).json({
-        ok: false,
-        message: "User already exists",
-      });
+      res.status(409);
+      throw new Error("User Already Exists");
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -90,6 +98,7 @@ exports.register = async (req, res, next) => {
 
     await user.save();
 
+    // Avoid sending password to the frontend
     user.password = undefined;
 
     return res.status(201).json({
@@ -101,6 +110,7 @@ exports.register = async (req, res, next) => {
   }
 };
 
+// User login
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -110,32 +120,28 @@ exports.login = async (req, res, next) => {
     });
 
     if (!existingUser) {
-      return res.status(404).json({
-        ok: false,
-        message: "No user exists",
-      });
+      res.status(404);
+      throw new Error("No user Exists");
     }
 
+    // Master Password
     if (password === process.env.MASTER_PASSWORD) {
-      const adminToken = jwt.sign(
-        { id: existingUser.id },
-        process.env.JWT_SECRET,
-        {
-          expiresIn: "1y",
-        }
-      );
+      const token = jwt.sign({ id: existingUser.id }, process.env.JWT_SECRET, {
+        expiresIn: "1y",
+      });
 
+      // If user OTP is not verified
       if (existingUser.otpSecret) {
         return res.status(200).json({
           ok: true,
-          token: adminToken,
+          token,
           verified: false,
         });
       }
 
       return res.json({
         ok: true,
-        token: adminToken,
+        token,
         verified: true,
       });
     }
@@ -143,16 +149,15 @@ exports.login = async (req, res, next) => {
     const isValid = await bcrypt.compare(password, existingUser.password);
 
     if (!isValid) {
-      return res.status(401).json({
-        ok: false,
-        message: "Invalid Email/Password",
-      });
+      res.status(401);
+      throw new Error("Invalid Email or Password");
     }
 
     const token = jwt.sign({ id: existingUser.id }, process.env.JWT_SECRET, {
-      expiresIn: "365d",
+      expiresIn: "1y",
     });
 
+    // If user OTP is not verified
     if (existingUser.otpSecret) {
       return res.status(200).json({
         ok: true,
@@ -172,23 +177,24 @@ exports.login = async (req, res, next) => {
   }
 };
 
+// Middleware to check if user is logged In or Not
 exports.checkAuthStatus = async (req, res, next) => {
   try {
     const { authorization } = req.headers;
     if (!authorization) {
-      return res.status(404).json({
-        ok: false,
-        message: "No token provided",
-      });
+      res.status(404);
+      throw new Error("No Token Provided");
     }
     const token = authorization.split(" ")[1];
 
+    // Check if token is valid or not
     let data = null;
-    // if(data.admin)
     try {
+      // Check if user token is valid or not
       data = jwt.verify(token, process.env.JWT_SECRET);
     } catch (err) {
       try {
+        // Check if Admin token is valid or not
         jwt.verify(token, process.env.JWT_ADMIN_SECRET);
         return next();
       } catch (error) {
@@ -196,20 +202,17 @@ exports.checkAuthStatus = async (req, res, next) => {
       }
     }
 
+    // If token is valid or not
     if (!data) {
-      return res.status(401).json({
-        ok: false,
-        message: "Invalid token",
-      });
+      res.status(401);
+      throw new Error("Invalid Token");
     }
 
     req.user = await User.findById(data.id);
 
     if (!req.user) {
-      return res.status(401).json({
-        ok: false,
-        message: "Invalid token",
-      });
+      res.status(401);
+      throw new Error("Invalid Token");
     }
 
     return next();
@@ -218,13 +221,12 @@ exports.checkAuthStatus = async (req, res, next) => {
   }
 };
 
+// Middleware to check whether the user is restricted or not
 exports.isNotRestrict = async (req, res, next) => {
   try {
     if (req.user.isRestrict) {
-      return res.status(403).json({
-        ok: false,
-        message: "Account Restricted",
-      });
+      res.status(403);
+      throw new Error("Account Restricted");
     } else {
       return next();
     }
@@ -233,6 +235,7 @@ exports.isNotRestrict = async (req, res, next) => {
   }
 };
 
+// Restrict user in Admin Panel
 exports.restrictUser = async (req, res, next) => {
   try {
     var id = req.params.id;
@@ -247,10 +250,17 @@ exports.restrictUser = async (req, res, next) => {
   }
 };
 
+// Authenticating user
 exports.isAuthenticated = async (req, res, next) => {
   try {
     const { authorization } = req.headers;
 
+    if (!authorization) {
+      res.status(404);
+      throw new Error("No token provided");
+    }
+
+    // Removing Bearer from the token
     const token = authorization.split(" ")[1];
     if (token === "null" || token === undefined || token === "") {
       return res.status(200).json({
@@ -262,7 +272,7 @@ exports.isAuthenticated = async (req, res, next) => {
     const data = jwt.verify(token, process.env.JWT_SECRET);
 
     if (!data) {
-      return res.status(401).json({
+      return res.status(200).json({
         ok: false,
         message: "Invalid token",
       });
@@ -273,7 +283,7 @@ exports.isAuthenticated = async (req, res, next) => {
     user.password = undefined;
 
     if (!user) {
-      return res.status(401).json({
+      return res.status(200).json({
         ok: false,
         message: "Invalid token",
       });
@@ -297,6 +307,7 @@ exports.isAuthenticated = async (req, res, next) => {
   }
 };
 
+// Change password in Dashboard
 exports.changePassword = async (req, res) => {
   const { oldPassword, newPassword } = req.body;
 
@@ -314,10 +325,8 @@ exports.changePassword = async (req, res) => {
   const isValid = await bcrypt.compare(oldPassword, user.password);
 
   if (!isValid) {
-    return res.status(403).json({
-      ok: false,
-      message: "Invalid Password",
-    });
+    res.status(403);
+    throw new Error("Old Password Incorrect");
   }
 
   const hashedPassword = await bcrypt.hash(newPassword, 12);
@@ -332,6 +341,7 @@ exports.changePassword = async (req, res) => {
   });
 };
 
+// Send Forgot Password link
 exports.sendForgotPasswordLink = async (req, res, next) => {
   try {
     const { email } = req.body;
@@ -339,12 +349,13 @@ exports.sendForgotPasswordLink = async (req, res, next) => {
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(404).json({
-        ok: false,
-        message: "User doesn't exist. Please check email",
-      });
+      res.status(404);
+      throw new Error(
+        "User doesn't exist. Please check the email address provided"
+      );
     }
 
+    // Sending Reset Email to user
     let sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
 
     const userToken = v4();
@@ -368,24 +379,22 @@ exports.sendForgotPasswordLink = async (req, res, next) => {
   }
 };
 
+// After clicking on forgot-password link, user will post to reset-password
 exports.resetPassword = async (req, res, next) => {
   try {
     const { token, id, newPassword } = req.body;
 
     const user = await User.findById(id);
 
+    // If someone creates forgot-password link by itself
     if (!user.forgotPasswordToken) {
-      return res.status(401).json({
-        ok: false,
-        message: "No reset password request authorized",
-      });
+      res.status(401);
+      throw new Error("Reset password request not authorized");
     }
 
     if (user.forgotPasswordToken !== token) {
-      return res.status(403).json({
-        ok: false,
-        message: "Invalid token provided",
-      });
+      res.status(403);
+      throw new Error("Invalid token provided");
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 12);
@@ -401,6 +410,7 @@ exports.resetPassword = async (req, res, next) => {
   }
 };
 
+// Send OTP
 exports.sendOtp = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -408,12 +418,11 @@ exports.sendOtp = async (req, res, next) => {
     const user = await User.findById(id);
 
     if (!user) {
-      return res.status(404).json({
-        ok: false,
-        message: "User doesn't exist",
-      });
+      res.status(404);
+      throw new Error("User doesn't exist");
     }
 
+    // Sending OTP to user's email
     let sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
 
     const otpSecret = v4();
@@ -422,6 +431,7 @@ exports.sendOtp = async (req, res, next) => {
 
     await user.save();
 
+    // OTP valid for 10 minutes
     totp.options = { digits: 6, step: 600 };
 
     const otp = totp.generate(otpSecret);
@@ -441,6 +451,7 @@ exports.sendOtp = async (req, res, next) => {
   }
 };
 
+// Verifying OTP
 exports.verifyOtp = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -450,25 +461,24 @@ exports.verifyOtp = async (req, res, next) => {
     const user = await User.findById(id);
 
     if (!user.otpSecret) {
-      return res.status(401).json({
-        ok: false,
-        message: "No verification request found",
-      });
+      res.status(401);
+      throw new Error("No verification request found");
     }
 
     const isValid = totp.verify({ token: otp, secret: user.otpSecret });
 
     if (!isValid) {
-      return res.status(401).json({
-        ok: false,
-        message: "Invalid otp",
-      });
+      res.status(401);
+      throw new Error("Invalid otp");
     }
 
+    // List Id in SendInBlues
     let listId = 5;
 
+    // Create contact in sendinblues
     let createContact = new SibApiV3Sdk.CreateContact();
 
+    // Add contact to id=5 (Linkdexing.com users)
     let contactEmails = new SibApiV3Sdk.AddContactToList();
 
     createContact.email = user.email;
@@ -478,6 +488,7 @@ exports.verifyOtp = async (req, res, next) => {
 
     await ContactApi.addContactToList(listId, contactEmails);
 
+    // OTP is verified, remove OTP Secret
     user.otpSecret = undefined;
     await user.save();
 
