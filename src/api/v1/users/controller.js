@@ -473,7 +473,7 @@ exports.verifyOtp = async (req, res, next) => {
 
     if (!isValid) {
       res.status(401);
-      throw new Error("Invalid otp");
+      throw new Error("OTP could not be verified Please try again");
     }
 
     // OTP is verified, remove OTP Secret
