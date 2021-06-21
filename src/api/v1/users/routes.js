@@ -14,6 +14,7 @@ const {
   resetPassword,
   sendOtp,
   verifyOtp,
+  addContactToSib,
 } = require("./controller");
 
 router.get("/search", checkAuthStatus, getUsers);
@@ -39,5 +40,7 @@ router.post("/reset-password", resetPassword);
 router.post("/send-otp/:id", sendOtp);
 
 router.post("/verify-otp/:id", verifyOtp);
+
+router.get("/addContactToSib/:id", addContactToSib);
 
 module.exports = router;

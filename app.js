@@ -28,7 +28,7 @@ app.use((err, req, res, next) => {
   }
   return res.json({
     ok: false,
-    message: err.message,
+    message: err.message || "Something went wrong",
   });
 });
 

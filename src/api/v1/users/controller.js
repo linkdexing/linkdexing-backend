@@ -476,6 +476,30 @@ exports.verifyOtp = async (req, res, next) => {
       throw new Error("Invalid otp");
     }
 
+    // OTP is verified, remove OTP Secret
+    user.otpSecret = undefined;
+    await user.save();
+
+    return res.json({
+      ok: true,
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+// Adding contact to SIB
+exports.addContactToSib = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findById(id);
+
+    if (!user) {
+      res.status(404);
+      throw new Error("User Not Found");
+    }
+
     // List Id in SendInBlues
     let listId = 5;
 
@@ -483,26 +507,23 @@ exports.verifyOtp = async (req, res, next) => {
     let createContact = new SibApiV3Sdk.CreateContact();
 
     // Add contact to id=5 (Linkdexing.com users)
-    let contactEmails = new SibApiV3Sdk.AddContactToList();
+    // let contactEmails = new SibApiV3Sdk.AddContactToList();
 
     createContact.email = user.email;
+    createContact.listIds = [listId];
     const names = user.name.trim().split(" ");
     if (names.length === 1) {
       createContact.attributes = { FIRSTNAME: names[0] };
     } else {
       createContact.attributes = { FIRSTNAME: names[0], LASTNAME: names[1] };
     }
-    contactEmails.emails = [user.email];
+    // contactEmails.emails = [user.email];
 
     await ContactApi.createContact(createContact);
 
-    await ContactApi.addContactToList(listId, contactEmails);
+    // await ContactApi.addContactToList(listId, contactEmails);
 
-    // OTP is verified, remove OTP Secret
-    user.otpSecret = undefined;
-    await user.save();
-
-    return res.json({
+    return res.status(200).json({
       ok: true,
     });
   } catch (err) {
