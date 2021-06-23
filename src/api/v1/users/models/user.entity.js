@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema(
   {
@@ -23,19 +22,9 @@ const userSchema = new mongoose.Schema(
       required: true,
       validate: /^.{5,}$/,
     },
-    isRestrict: {
-      type: Boolean,
-      default: false,
-    },
-    totalLinks: {
-      type: Number,
-      default: 0,
-    },
-    forgotPasswordToken: {
-      type: String,
-    },
-    otpSecret: {
-      type: String,
+    userVariables: {
+      type: mongoose.Types.ObjectId,
+      ref: "userVariable",
     },
   },
   {

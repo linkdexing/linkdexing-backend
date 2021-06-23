@@ -372,3 +372,59 @@ exports.resetPassword = async (req, res, next) => {
     return next(err);
   }
 };
+
+// Verifying OTP
+exports.verifyOtp = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const { otp } = req.body;
+
+    const user = await User.findById(id);
+
+    if (!user.otpSecret) {
+      res.status(401);
+      throw new Error("No verification request found");
+    }
+
+    const isValid = totp.verify({ token: otp, secret: user.otpSecret });
+
+    if (!isValid) {
+      res.status(401);
+      throw new Error("Invalid otp");
+    }
+
+    // List Id in SendInBlues
+    let listId = 5;
+
+    // Create contact in sendinblues
+    let createContact = new SibApiV3Sdk.CreateContact();
+
+    // Add contact to id=5 (Linkdexing.com users)
+    let contactEmails = new SibApiV3Sdk.AddContactToList();
+
+    createContact.email = user.email;
+    const names = user.name.trim().split(" ");
+    if (names.length === 1) {
+      createContact.attributes = { FIRSTNAME: names[0] };
+    } else {
+      createContact.attributes = { FIRSTNAME: names[0], LASTNAME: names[1] };
+    }
+    contactEmails.emails = [user.email];
+
+    await ContactApi.createContact(createContact);
+
+    await ContactApi.addContactToList(listId, contactEmails);
+
+    // OTP is verified, remove OTP Secret
+    user.otpSecret = undefined;
+    await user.save();
+    await userVariables.save();
+
+    return res.json({
+      ok: true,
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
