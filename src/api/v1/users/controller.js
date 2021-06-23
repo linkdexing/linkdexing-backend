@@ -518,7 +518,6 @@ exports.createContactInSib = async (req, res, next) => {
       ok: true,
     });
   } catch (err) {
-    console.log(err);
     return next(err);
   }
 };
