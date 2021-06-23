@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const UserVariables = require("../userVariables/models/userVariables.entity");
 
 exports.isAuthenticated = async (req, res) => {
   if (req.admin) {
@@ -89,6 +90,29 @@ exports.isAdmin = (req, res, next) => {
     }
 
     return next();
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.changeUserLinksLimit = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const { limit } = req.body;
+
+    if (limit < 0) {
+      throw new Error("Limit cannot be less than 0");
+    }
+
+    const userVariables = await UserVariables.findOne({ user: userId });
+
+    userVariables.monthlyLimit = limit;
+
+    await userVariables.save();
+
+    return res.json({
+      ok: true,
+    });
   } catch (err) {
     return next(err);
   }

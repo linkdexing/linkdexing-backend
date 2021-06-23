@@ -20,7 +20,16 @@ exports.createOrder = async (req, res, next) => {
     const linksCount = links.split("\n").length;
 
     const userVariables = await UserVariables.findOne({ user: id });
+
+    const currentCount = userVariables.monthlyUsed + linksCount;
+
+    if (currentCount > userVariables.monthlyLimit) {
+      res.status(403);
+      throw new Error("Your monthly limit of links has been exceeded");
+    }
+
     userVariables.totalLinks += linksCount;
+    userVariables.monthlyUsed = currentCount;
 
     await userVariables.save();
 

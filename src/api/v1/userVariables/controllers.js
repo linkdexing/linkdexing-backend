@@ -1,3 +1,4 @@
+const moment = require("moment");
 const UserVariables = require("./models/userVariables.entity");
 
 // Middleware to check whether the user is restricted or not
@@ -166,6 +167,25 @@ exports.verifyOtp = async (req, res, next) => {
     return res.json({
       ok: true,
     });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.shouldResetLinks = async (req, res, next) => {
+  try {
+    const userVariables = req.variables;
+
+    const lastResetDate = moment(userVariables.lastResetDate);
+
+    const currentDate = moment(Date.now());
+
+    if (lastResetDate.add({ days: 30 }).isSameOrAfter(currentDate)) {
+      userVariables.monthlyUsed = 0;
+      userVariables.lastResetDate = Date.now();
+    }
+
+    next();
   } catch (err) {
     return next(err);
   }

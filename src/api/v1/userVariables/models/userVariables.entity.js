@@ -28,6 +28,10 @@ const userVariableSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    lastResetLinksDate: {
+      type: Date,
+      default: Date.now(),
+    },
   },
   {
     timestamps: true,

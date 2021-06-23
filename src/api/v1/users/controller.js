@@ -215,13 +215,7 @@ exports.checkAuthStatus = async (req, res, next) => {
       // Check if user token is valid or not
       data = jwt.verify(token, process.env.JWT_SECRET);
     } catch (err) {
-      try {
-        // Check if Admin token is valid or not
-        jwt.verify(token, process.env.JWT_ADMIN_SECRET);
-        return next();
-      } catch (error) {
-        return next(error);
-      }
+      throw new Error("Invalid token");
     }
 
     // If token is valid or not

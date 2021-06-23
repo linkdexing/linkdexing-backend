@@ -1,4 +1,12 @@
-const { checkAuthStatus, isNotRestrict } = require("../users/controller");
+const {
+  checkAuthStatus: checkAuthStatusAdmin,
+  isAdmin,
+} = require("../admin/controller");
+const {
+  checkAuthStatus: checkAuthStatusUser,
+  isNotRestrict,
+} = require("../users/controller");
+const { shouldResetLinks } = require("../userVariables/controllers");
 const {
   getOrdersByUser,
   createOrder,
@@ -10,17 +18,28 @@ const {
 
 const router = require("express").Router();
 
-router.get("/all", checkAuthStatus, isNotRestrict, getOrders);
+router.get(
+  "/all",
+  checkAuthStatusUser,
+  shouldResetLinks,
+  isNotRestrict,
+  getOrders
+);
 
-router.get("/dripfeed/:dripfeed", checkAuthStatus, getOrdersByDripfeed);
+router.get(
+  "/dripfeed/:dripfeed",
+  checkAuthStatusUser,
+  shouldResetLinks,
+  getOrdersByDripfeed
+);
 
-router.post("/process", checkAuthStatus, processOrder);
+router.post("/process", checkAuthStatusAdmin, isAdmin, processOrder);
 
-router.get("/:orderId", checkAuthStatus, getOrderLinks);
+router.get("/:orderId", checkAuthStatusUser, shouldResetLinks, getOrderLinks);
 
 router
   .route("/")
-  .get(checkAuthStatus, getOrdersByUser)
-  .post(checkAuthStatus, isNotRestrict, createOrder);
+  .get(checkAuthStatusUser, getOrdersByUser)
+  .post(checkAuthStatusUser, isNotRestrict, createOrder);
 
 module.exports = router;
