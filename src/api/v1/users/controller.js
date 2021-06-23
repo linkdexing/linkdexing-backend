@@ -151,6 +151,7 @@ exports.login = async (req, res, next) => {
       });
 
       // If user OTP is not verified
+
       if (existingUser.userVariables.otpSecret) {
         return res.status(200).json({
           ok: true,

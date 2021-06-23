@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema(
     },
     userVariables: {
       type: mongoose.Types.ObjectId,
-      ref: "userVariable",
+      ref: "userVariables",
     },
   },
   {

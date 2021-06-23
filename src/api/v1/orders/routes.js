@@ -2,11 +2,11 @@ const {
   checkAuthStatus: checkAuthStatusAdmin,
   isAdmin,
 } = require("../admin/controller");
+const { checkAuthStatus: checkAuthStatusUser } = require("../users/controller");
 const {
-  checkAuthStatus: checkAuthStatusUser,
+  shouldResetLinks,
   isNotRestrict,
-} = require("../users/controller");
-const { shouldResetLinks } = require("../userVariables/controllers");
+} = require("../userVariables/controllers");
 const {
   getOrdersByUser,
   createOrder,
