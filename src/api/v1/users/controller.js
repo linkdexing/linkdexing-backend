@@ -7,6 +7,7 @@ const jwt = require("jsonwebtoken");
 const User = require("./models/user.entity");
 const Order = require("../orders/models/order.entity");
 const { TransactionalEmailsApi, ContactApi } = require("../../../utils/sib");
+const UserVariables = require("../userVariables/models/userVariables.entity");
 
 // Verification of user through Recaptcha
 exports.verifyUser = async (req, res, next) => {
@@ -36,9 +37,11 @@ exports.getUsers = async (req, res, next) => {
       email: {
         $regex: new RegExp(q),
       },
-    }).sort({
-      totalLinks: -1,
-    });
+    })
+      .populate("userVariables")
+      .sort({
+        "userVariables.totalLinks": -1,
+      });
 
     return res.status(200).json({
       ok: true,
@@ -96,6 +99,23 @@ exports.register = async (req, res, next) => {
       password: hashedPassword,
     });
 
+    const existingUserVariables = await UserVariables.findOne({
+      user: user.id,
+    });
+
+    if (existingUserVariables) {
+      res.status(403);
+      throw new Error("User variables already exist");
+    }
+
+    const userVariables = new UserVariables({
+      user: user._id,
+    });
+
+    await userVariables.save();
+
+    user.userVariables = userVariables._id;
+
     await user.save();
 
     // Avoid sending password to the frontend
@@ -117,7 +137,7 @@ exports.login = async (req, res, next) => {
 
     const existingUser = await User.findOne({
       email,
-    });
+    }).populate("userVariables");
 
     if (!existingUser) {
       res.status(404);
@@ -131,7 +151,7 @@ exports.login = async (req, res, next) => {
       });
 
       // If user OTP is not verified
-      if (existingUser.otpSecret) {
+      if (existingUser.userVariables.otpSecret) {
         return res.status(200).json({
           ok: true,
           token,
@@ -158,7 +178,7 @@ exports.login = async (req, res, next) => {
     });
 
     // If user OTP is not verified
-    if (existingUser.otpSecret) {
+    if (existingUser.userVariables.otpSecret) {
       return res.status(200).json({
         ok: true,
         user: existingUser,
@@ -181,10 +201,12 @@ exports.login = async (req, res, next) => {
 exports.checkAuthStatus = async (req, res, next) => {
   try {
     const { authorization } = req.headers;
+
     if (!authorization) {
       res.status(404);
       throw new Error("No Token Provided");
     }
+
     const token = authorization.split(" ")[1];
 
     // Check if token is valid or not
@@ -209,6 +231,7 @@ exports.checkAuthStatus = async (req, res, next) => {
     }
 
     req.user = await User.findById(data.id);
+    req.variables = await UserVariables.findOne({ user: data.id });
 
     if (!req.user) {
       res.status(401);
@@ -216,35 +239,6 @@ exports.checkAuthStatus = async (req, res, next) => {
     }
 
     return next();
-  } catch (err) {
-    return next(err);
-  }
-};
-
-// Middleware to check whether the user is restricted or not
-exports.isNotRestrict = async (req, res, next) => {
-  try {
-    if (req.user.isRestrict) {
-      res.status(403);
-      throw new Error("Account Restricted");
-    } else {
-      return next();
-    }
-  } catch (err) {
-    return next(err);
-  }
-};
-
-// Restrict user in Admin Panel
-exports.restrictUser = async (req, res, next) => {
-  try {
-    var id = req.params.id;
-    const user = await User.findById(id);
-    user.isRestrict = req.body.option;
-    await user.save();
-    return res.status(200).json({
-      ok: true,
-    });
   } catch (err) {
     return next(err);
   }
@@ -278,7 +272,7 @@ exports.isAuthenticated = async (req, res, next) => {
       });
     }
 
-    const user = await User.findById(data.id);
+    const user = await User.findById(data.id).populate("userVariables");
 
     user.password = undefined;
 
@@ -289,7 +283,7 @@ exports.isAuthenticated = async (req, res, next) => {
       });
     }
 
-    if (user.otpSecret) {
+    if (user.userVariables.otpSecret) {
       return res.status(200).json({
         ok: false,
         user,
@@ -345,44 +339,6 @@ exports.changePassword = async (req, res, next) => {
   }
 };
 
-// Send Forgot Password link
-exports.sendForgotPasswordLink = async (req, res, next) => {
-  try {
-    const { email } = req.body;
-
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      res.status(404);
-      throw new Error(
-        "User doesn't exist. Please check the email address provided"
-      );
-    }
-
-    // Sending Reset Email to user
-    let sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-
-    const userToken = v4();
-
-    user.forgotPasswordToken = userToken;
-
-    await user.save();
-
-    sendSmtpEmail.sender = { email: "noreply@linkdexing.com" };
-    sendSmtpEmail.to = [{ email }];
-    sendSmtpEmail.subject = "Reset Password Link";
-    sendSmtpEmail.textContent = `Hi there! We received a password reset request. If that was not you, please contact support. \nYour reset link is: ${process.env.FRONTEND_URL}/reset-password?id=${user.id}&token=${userToken}`;
-
-    await TransactionalEmailsApi.sendTransacEmail(sendSmtpEmail);
-
-    return res.json({
-      ok: true,
-    });
-  } catch (err) {
-    return next(err);
-  }
-};
-
 // After clicking on forgot-password link, user will post to reset-password
 exports.resetPassword = async (req, res, next) => {
   try {
@@ -390,160 +346,26 @@ exports.resetPassword = async (req, res, next) => {
 
     const user = await User.findById(id);
 
+    const userVariables = await UserVariables.findOne({ user: user.id });
+
     // If someone creates forgot-password link by itself
-    if (!user.forgotPasswordToken) {
+    if (!userVariables.forgotPasswordToken) {
       res.status(401);
       throw new Error("Reset password request not authorized");
     }
 
-    if (user.forgotPasswordToken !== token) {
+    if (userVariables.forgotPasswordToken !== token) {
       res.status(403);
       throw new Error("Invalid token provided");
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 12);
     user.password = hashedPassword;
-    user.forgotPasswordToken = undefined;
+    userVariables.forgotPasswordToken = undefined;
     await user.save();
+    await userVariables.save();
 
     return res.json({
-      ok: true,
-    });
-  } catch (err) {
-    return next(err);
-  }
-};
-
-// Send OTP
-exports.sendOtp = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-
-    const user = await User.findById(id);
-
-    if (!user) {
-      res.status(404);
-      throw new Error("User doesn't exist");
-    }
-
-    // Sending OTP to user's email
-    let sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-
-    const otpSecret = v4();
-
-    user.otpSecret = otpSecret;
-
-    await user.save();
-
-    // OTP valid for 10 minutes
-    totp.options = { digits: 6, step: 600 };
-
-    const otp = totp.generate(otpSecret);
-
-    sendSmtpEmail.sender = { email: "noreply@linkdexing.com" };
-    sendSmtpEmail.to = [{ email: user.email }];
-    sendSmtpEmail.subject = "Verify your account";
-    sendSmtpEmail.textContent = `Hi there! Your OTP is ${otp}`;
-
-    await TransactionalEmailsApi.sendTransacEmail(sendSmtpEmail);
-
-    return res.json({
-      ok: true,
-    });
-  } catch (err) {
-    return next(err);
-  }
-};
-
-// Verifying OTP
-exports.verifyOtp = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-
-    const { otp } = req.body;
-
-    const user = await User.findById(id);
-
-    if (!user.otpSecret) {
-      res.status(401);
-      throw new Error("No verification request found");
-    }
-
-    const isValid = totp.verify({ token: otp, secret: user.otpSecret });
-
-    if (!isValid) {
-      res.status(401);
-      throw new Error("OTP could not be verified Please try again");
-    }
-
-    // OTP is verified, remove OTP Secret
-    user.otpSecret = undefined;
-    await user.save();
-
-    return res.json({
-      ok: true,
-    });
-  } catch (err) {
-    return next(err);
-  }
-};
-
-// Creating contact in SIB
-exports.createContactInSib = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-
-    const user = await User.findById(id);
-
-    if (!user) {
-      res.status(404);
-      throw new Error("User Not Found");
-    }
-
-    // Create contact in sendinblues
-    let createContact = new SibApiV3Sdk.CreateContact();
-
-    createContact.email = user.email;
-
-    const names = user.name.trim().split(" ");
-    if (names.length === 1) {
-      createContact.attributes = { FIRSTNAME: names[0] };
-    } else {
-      createContact.attributes = { FIRSTNAME: names[0], LASTNAME: names[1] };
-    }
-
-    await ContactApi.createContact(createContact);
-
-    return res.status(200).json({
-      ok: true,
-    });
-  } catch (err) {
-    return next(err);
-  }
-};
-
-// Adding contact to SIB list (Linkdexing.com Users)
-exports.addContactToSibList = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-
-    const user = await User.findById(id);
-
-    if (!user) {
-      res.status(404);
-      throw new Error("User Not Found");
-    }
-
-    // Linkdexing.com Users listId in Send in Blue
-    let listId = 5;
-
-    // Add contact to id=5 (Linkdexing.com users)
-    let contactEmails = new SibApiV3Sdk.AddContactToList();
-
-    contactEmails.emails = [user.email];
-    await ContactApi.addContactToList(listId, contactEmails);
-
-    return res.status(200).json({
       ok: true,
     });
   } catch (err) {
