@@ -366,3 +366,67 @@ exports.resetPassword = async (req, res, next) => {
     return next(err);
   }
 };
+
+// Creating contact in SIB
+exports.createContactInSib = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findById(id);
+
+    if (!user) {
+      res.status(404);
+      throw new Error("User Not Found");
+    }
+
+    // Create contact in sendinblues
+    let createContact = new SibApiV3Sdk.CreateContact();
+
+    createContact.email = user.email;
+
+    const names = user.name.trim().split(" ");
+    if (names.length === 1) {
+      createContact.attributes = { FIRSTNAME: names[0] };
+    } else {
+      createContact.attributes = { FIRSTNAME: names[0], LASTNAME: names[1] };
+    }
+
+    await ContactApi.createContact(createContact);
+
+    return res.status(200).json({
+      ok: true,
+    });
+  } catch (err) {
+    console.log(err);
+    return next(err);
+  }
+};
+
+// Adding contact to SIB list (Linkdexing.com Users)
+exports.addContactToSibList = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findById(id);
+
+    if (!user) {
+      res.status(404);
+      throw new Error("User Not Found");
+    }
+
+    // Linkdexing.com Users listId in Send in Blue
+    let listId = 5;
+
+    // Add contact to id=5 (Linkdexing.com users)
+    let contactEmails = new SibApiV3Sdk.AddContactToList();
+
+    contactEmails.emails = [user.email];
+    await ContactApi.addContactToList(listId, contactEmails);
+
+    return res.status(200).json({
+      ok: true,
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
