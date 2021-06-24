@@ -26,12 +26,7 @@ router.get(
   getOrders
 );
 
-router.get(
-  "/dripfeed/:dripfeed",
-  checkAuthStatusUser,
-  shouldResetLinks,
-  getOrdersByDripfeed
-);
+router.get("/dripfeed/:dripfeed", checkAuthStatusAdmin, getOrdersByDripfeed);
 
 router.post("/process", checkAuthStatusAdmin, isAdmin, processOrder);
 

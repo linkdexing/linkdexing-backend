@@ -21,7 +21,7 @@ const {
   addContactToSibList,
 } = require("./controller");
 
-router.get("/search", checkAuthStatusUser, shouldResetLinks, getUsers);
+router.get("/search", checkAuthStatusAdmin, getUsers);
 router.post("/verify", verifyUser);
 router.route("/").post(register);
 router.post("/login", login);
