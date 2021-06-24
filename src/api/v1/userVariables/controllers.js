@@ -1,4 +1,9 @@
 const moment = require("moment");
+var SibApiV3Sdk = require("sib-api-v3-sdk");
+const { TransactionalEmailsApi, ContactApi } = require("../../../utils/sib");
+const { v4 } = require("uuid");
+const { totp } = require("otplib");
+
 const UserVariables = require("./models/userVariables.entity");
 
 // Middleware to check whether the user is restricted or not
@@ -60,7 +65,7 @@ exports.sendOtp = async (req, res, next) => {
     const otp = totp.generate(otpSecret);
 
     sendSmtpEmail.sender = { email: "noreply@linkdexing.com" };
-    sendSmtpEmail.to = [{ email: user.email }];
+    sendSmtpEmail.to = [{ email: userVariables.user.email }];
     sendSmtpEmail.subject = "Verify your account";
     sendSmtpEmail.textContent = `Hi there! Your OTP is ${otp}`;
 
@@ -121,7 +126,9 @@ exports.verifyOtp = async (req, res, next) => {
 
     const { otp } = req.body;
 
-    const userVariables = await UserVariables.findOne({ user: id });
+    const userVariables = await UserVariables.findOne({ user: id }).populate(
+      "user"
+    );
 
     if (!userVariables.otpSecret) {
       res.status(401);
@@ -137,28 +144,6 @@ exports.verifyOtp = async (req, res, next) => {
       res.status(401);
       throw new Error("Invalid otp");
     }
-
-    // List Id in SendInBlues
-    let listId = 5;
-
-    // Create contact in sendinblues
-    let createContact = new SibApiV3Sdk.CreateContact();
-
-    // Add contact to id=5 (Linkdexing.com users)
-    let contactEmails = new SibApiV3Sdk.AddContactToList();
-
-    createContact.email = user.email;
-    const names = user.name.trim().split(" ");
-    if (names.length === 1) {
-      createContact.attributes = { FIRSTNAME: names[0] };
-    } else {
-      createContact.attributes = { FIRSTNAME: names[0], LASTNAME: names[1] };
-    }
-    contactEmails.emails = [user.email];
-
-    await ContactApi.createContact(createContact);
-
-    await ContactApi.addContactToList(listId, contactEmails);
 
     // OTP is verified, remove OTP Secret
     userVariables.otpSecret = undefined;

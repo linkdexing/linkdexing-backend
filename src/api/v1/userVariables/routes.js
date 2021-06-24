@@ -4,7 +4,6 @@ const {
   sendOtp,
   sendForgotPasswordLink,
   verifyOtp,
-  shouldResetLinks,
 } = require("./controllers");
 
 const router = require("express").Router();

@@ -26,6 +26,7 @@ app.use(morgan("combined", { stream: logger.stream }));
 app.use("/api/v1/users", require("./src/api/v1/users/routes"));
 app.use("/api/v1/orders", require("./src/api/v1/orders/routes"));
 app.use("/api/v1/admin", require("./src/api/v1/admin/routes"));
+app.use("/api/v1/userVariables", require("./src/api/v1/userVariables/routes"));
 
 // Errors are shown in error.log
 // Both success and error are shown in access.log
@@ -53,7 +54,8 @@ app.use((err, req, res, next) => {
 });
 
 mongoose.connect(
-  `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.men9r.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`,
+  // `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.men9r.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`,
+  `mongodb://localhost:27017/linkdexing`,
   {
     useNewUrlParser: true,
     useUnifiedTopology: true,

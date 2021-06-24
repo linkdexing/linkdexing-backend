@@ -1,12 +1,10 @@
 const bcrypt = require("bcryptjs");
 const axios = require("axios");
-const { totp } = require("otplib");
-const { v4 } = require("uuid");
 var SibApiV3Sdk = require("sib-api-v3-sdk");
 const jwt = require("jsonwebtoken");
 const User = require("./models/user.entity");
 const Order = require("../orders/models/order.entity");
-const { TransactionalEmailsApi, ContactApi } = require("../../../utils/sib");
+const { ContactApi } = require("../../../utils/sib");
 const UserVariables = require("../userVariables/models/userVariables.entity");
 
 // Verification of user through Recaptcha
