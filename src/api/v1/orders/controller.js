@@ -8,14 +8,6 @@ exports.createOrder = async (req, res, next) => {
     const { links, dripfeed } = req.body;
     const { id } = req.user;
 
-    const order = new Order({
-      userId: id,
-      links,
-      dripfeed,
-    });
-
-    await order.save();
-
     // Total Number of links
     const linksCount = links.split("\n").length;
 
@@ -27,6 +19,14 @@ exports.createOrder = async (req, res, next) => {
       res.status(403);
       throw new Error("Your monthly limit of links has been exceeded");
     }
+
+    const order = new Order({
+      userId: id,
+      links,
+      dripfeed,
+    });
+
+    await order.save();
 
     userVariables.totalLinks += linksCount;
     userVariables.monthlyUsed = currentCount;
