@@ -1,11 +1,11 @@
 # RELEASE - v1.0.4
 
-- ## Admin
+- ## [Admin](https://admin-test.linkdexing.com)
   - Added Monthly Links Limit. 
   - Added Monthly Used.
   - Edit Links limit 
 
-- ## Backend
+- ## [Backend](https://api-test.linkdexing.com)
   - Separated SendInBlue endpoints.
   - Separated user and userVariables.
   - Added Monthly Links Limit. 
@@ -13,7 +13,7 @@
   - Edit Links limit
   - Reset Links to Default value in a month
 
-- ## FrontEnd
+- ## [App](app-test.linkdexing.com)
   - Monthly used counter added
   - Monthly limit counter added
   - Separate API calls on Submit in Register Page
