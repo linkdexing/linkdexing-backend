@@ -59,6 +59,7 @@ exports.deleteUser = async (req, res, next) => {
     // Delete orders of the user by user._id
     await Order.deleteMany({ userId: user._id });
 
+    await UserVariables.deleteOne({ user: user._id });
     // Delete user by email
     User.deleteOne({ email: q }, function (err) {
       if (err) return next(err);
@@ -68,6 +69,27 @@ exports.deleteUser = async (req, res, next) => {
           message: "User Deleted",
         });
       }
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.deleteUserSIB = async (req, res, next) => {
+  try {
+    var q = req.params.q;
+    // Find by email
+    const user = await User.findOne({ email: q });
+
+    if (!user) {
+      res.status(404);
+      throw new Error("User not found");
+    }
+
+    await ContactApi.deleteContact(q);
+
+    return res.status(200).json({
+      ok: true,
     });
   } catch (err) {
     return next(err);

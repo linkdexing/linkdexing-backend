@@ -19,6 +19,7 @@ const {
   resetPassword,
   createContactInSib,
   addContactToSibList,
+  deleteUserSIB,
 } = require("./controller");
 
 router.get("/search", checkAuthStatusAdmin, getUsers);
@@ -34,6 +35,7 @@ router.post(
   changePassword
 );
 router.delete("/delete/:q", checkAuthStatusAdmin, isAdmin, deleteUser);
+router.delete("/deleteSIB/:q", checkAuthStatusAdmin, isAdmin, deleteUserSIB);
 router.post("/reset-password", resetPassword);
 router.get("/createContactInSib/:id", createContactInSib);
 router.get("/addContactToSibList/:id", addContactToSibList);

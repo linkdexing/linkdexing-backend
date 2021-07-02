@@ -17,7 +17,9 @@ exports.createOrder = async (req, res, next) => {
 
     if (currentCount > userVariables.monthlyLimit) {
       res.status(403);
-      throw new Error("Your monthly limit of links has been exceeded");
+      throw new Error(
+        "Your monthly limit of links has been exceeded.\n Please contact us at avneet@linkdexing.com"
+      );
     }
 
     const order = new Order({
