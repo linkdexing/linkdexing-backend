@@ -24,7 +24,7 @@ exports.isNotRestrict = async (req, res, next) => {
 exports.restrictUser = async (req, res, next) => {
   try {
     var id = req.params.id;
-    const userVariables = await UserVariables.findOne({ userId: id });
+    const userVariables = await UserVariables.findOne({ user: id });
     userVariables.isRestrict = req.body.option;
     await userVariables.save();
 
