@@ -13,6 +13,8 @@ const port = process.env.PORT || 4000;
 
 app.use(cors());
 
+app.use("/uploads", express.static("uploads"));
+
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: false, limit: "50mb" }));
 logger.stream = {
@@ -27,6 +29,7 @@ app.use("/api/v1/users", require("./src/api/v1/users/routes"));
 app.use("/api/v1/orders", require("./src/api/v1/orders/routes"));
 app.use("/api/v1/admin", require("./src/api/v1/admin/routes"));
 app.use("/api/v1/userVariables", require("./src/api/v1/userVariables/routes"));
+app.use("/api/v1/advertisement", require("./src/api/v1/advertisements/routes"));
 
 // Errors are shown in error.log
 // Both success and error are shown in access.log
