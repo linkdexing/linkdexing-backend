@@ -6,6 +6,7 @@ const User = require("./models/user.entity");
 const Order = require("../orders/models/order.entity");
 const { ContactApi } = require("../../../utils/sib");
 const UserVariables = require("../userVariables/models/userVariables.entity");
+const _ = require("lodash");
 
 // Verification of user through Recaptcha
 exports.verifyUser = async (req, res, next) => {
@@ -31,15 +32,15 @@ exports.verifyUser = async (req, res, next) => {
 exports.getUsers = async (req, res, next) => {
   try {
     var q = req.query.q;
-    const users = await User.find({
+    let users = await User.find({
       email: {
         $regex: new RegExp(q),
       },
-    })
-      .populate("userVariables")
-      .sort({
-        "userVariables.totalLinks": -1,
-      });
+    }).populate("userVariables");
+    // .sort({
+    //   "userVariables.totalLinks": -1,
+    // });
+    users = _.orderBy(users, "userVariables.totalLinks", "desc");
 
     return res.status(200).json({
       ok: true,
