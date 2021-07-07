@@ -27,3 +27,27 @@ exports.createAd = async (req, res, next) => {
     return next(err);
   }
 };
+
+exports.getTopLeftAdv = async (req, res, next) => {
+  try {
+    const topLeftAdv = await Advertisement.find({ type: "top-left" });
+    return res.status(200).json({
+      ok: true,
+      topLeftAdv,
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.getBottomRightAdv = async (req, res, next) => {
+  try {
+    const bottomRightAdv = await Advertisement.find({ type: "bottom-right" });
+    return res.status(200).json({
+      ok: true,
+      bottomRightAdv,
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
