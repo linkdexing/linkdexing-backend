@@ -54,8 +54,7 @@ app.use((err, req, res, next) => {
 });
 
 mongoose.connect(
-  `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.men9r.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`,
-  // `mongodb://localhost:27017/linkdexing`,
+  `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@linkdexing.vlcc1.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`,  
   {
     useNewUrlParser: true,
     useUnifiedTopology: true,
