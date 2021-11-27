@@ -106,7 +106,7 @@ exports.changeUserLinksLimit = async (req, res, next) => {
 
     const userVariables = await UserVariables.findOne({ user: userId });
 
-    userVariables.monthlyLimit = limit;
+    userVariables.totalLimit = limit;
 
     await userVariables.save();
 

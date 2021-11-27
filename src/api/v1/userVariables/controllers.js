@@ -157,21 +157,21 @@ exports.verifyOtp = async (req, res, next) => {
   }
 };
 
-exports.shouldResetLinks = async (req, res, next) => {
-  try {
-    const userVariables = req.variables;
+// exports.shouldResetLinks = async (req, res, next) => {
+//   try {
+//     const userVariables = req.variables;
 
-    const lastResetDate = moment(userVariables.lastResetDate);
+//     const lastResetDate = moment(userVariables.lastResetDate);
 
-    const currentDate = moment(Date.now());
+//     const currentDate = moment(Date.now());
 
-    if (lastResetDate.add({ days: 30 }).isSameOrAfter(currentDate)) {
-      userVariables.monthlyUsed = 0;
-      userVariables.lastResetDate = Date.now();
-    }
+//     if (lastResetDate.add({ days: 30 }).isSameOrAfter(currentDate)) {
+//       userVariables.monthlyUsed = 0;
+//       userVariables.lastResetDate = Date.now();
+//     }
 
-    next();
-  } catch (err) {
-    return next(err);
-  }
-};
+//     next();
+//   } catch (err) {
+//     return next(err);
+//   }
+// };

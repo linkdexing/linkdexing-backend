@@ -5,7 +5,6 @@ const {
 } = require("../admin/controller");
 const {
   isNotRestrict,
-  shouldResetLinks,
 } = require("../userVariables/controllers");
 const {
   register,
@@ -30,7 +29,6 @@ router.get("/isAuthenticated", isAuthenticated);
 router.post(
   "/change-password",
   checkAuthStatusUser,
-  shouldResetLinks,
   isNotRestrict,
   changePassword
 );

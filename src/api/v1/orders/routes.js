@@ -4,7 +4,6 @@ const {
 } = require("../admin/controller");
 const { checkAuthStatus: checkAuthStatusUser } = require("../users/controller");
 const {
-  shouldResetLinks,
   isNotRestrict,
 } = require("../userVariables/controllers");
 const {
@@ -21,7 +20,6 @@ const router = require("express").Router();
 router.get(
   "/all",
   checkAuthStatusUser,
-  shouldResetLinks,
   isNotRestrict,
   getOrders
 );
@@ -30,7 +28,7 @@ router.get("/dripfeed/:dripfeed", checkAuthStatusAdmin, getOrdersByDripfeed);
 
 router.post("/process", checkAuthStatusAdmin, isAdmin, processOrder);
 
-router.get("/:orderId", checkAuthStatusUser, shouldResetLinks, getOrderLinks);
+router.get("/:orderId", checkAuthStatusUser, getOrderLinks);
 
 router
   .route("/")

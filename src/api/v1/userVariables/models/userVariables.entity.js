@@ -20,13 +20,17 @@ const userVariableSchema = new mongoose.Schema(
     otpSecret: {
       type: String,
     },
-    monthlyLimit: {
+    // monthlyLimit: {
+    //   type: Number,
+    //   default: 5000,
+    // },
+    // monthlyUsed: {
+    //   type: Number,
+    //   default: 0,
+    // },
+    totalLimit: {
       type: Number,
-      default: 5000,
-    },
-    monthlyUsed: {
-      type: Number,
-      default: 0,
+      default: 1000,
     },
     lastResetLinksDate: {
       type: Date,

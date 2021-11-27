@@ -13,12 +13,12 @@ exports.createOrder = async (req, res, next) => {
 
     const userVariables = await UserVariables.findOne({ user: id });
 
-    const currentCount = userVariables.monthlyUsed + linksCount;
+    const currentCount = userVariables.totalLinks + linksCount;
 
-    if (currentCount > userVariables.monthlyLimit) {
+    if (currentCount > userVariables.totalLimit) {
       res.status(403);
       throw new Error(
-        "Your monthly limit of links has been exceeded.\n Please contact us at avneet@linkdexing.com"
+        "Your total limit of links has been exceeded.\n Please contact us at avneet@linkdexing.com"
       );
     }
 
@@ -31,7 +31,7 @@ exports.createOrder = async (req, res, next) => {
     await order.save();
 
     userVariables.totalLinks += linksCount;
-    userVariables.monthlyUsed = currentCount;
+    // userVariables.monthlyUsed = currentCount;
 
     await userVariables.save();
 
