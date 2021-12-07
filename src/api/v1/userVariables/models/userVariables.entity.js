@@ -30,7 +30,7 @@ const userVariableSchema = new mongoose.Schema(
     // },
     totalLimit: {
       type: Number,
-      default: 1000,
+      default: 0,
     },
     lastResetLinksDate: {
       type: Date,
