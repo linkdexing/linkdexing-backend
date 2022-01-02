@@ -33,9 +33,16 @@ exports.getUsers = async (req, res, next) => {
   try {
     var q = req.query.q;
     let users = await User.find({
-      email: {
-        $regex: new RegExp(q),
+      '$or': [{
+        email: {
+          $regex: new RegExp(q),
+        }
       },
+      {
+        name: {
+          $regex: new RegExp(q),
+        }
+      }]
     }).populate("userVariables");
     // .sort({
     //   "userVariables.totalLinks": -1,
