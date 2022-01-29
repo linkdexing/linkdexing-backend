@@ -9,7 +9,7 @@ exports.createOrder = async (req, res, next) => {
     const { id } = req.user;
 
     // Total Number of links
-    const linksCount = links.split("\n").length;
+    const linksCount = links.split("\n").filter(link => link.length!==0).length;
 
     const userVariables = await UserVariables.findOne({ user: id });
 
