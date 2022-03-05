@@ -5,6 +5,7 @@ const { v4 } = require("uuid");
 const { totp } = require("otplib");
 
 const UserVariables = require("./models/userVariables.entity");
+const User = require("../users/models/user.entity");
 
 // Middleware to check whether the user is restricted or not
 exports.isNotRestrict = async (req, res, next) => {
