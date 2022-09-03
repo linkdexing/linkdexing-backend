@@ -18,6 +18,11 @@ const orderSchema = new mongoose.Schema(
       max: 31,
       min: 1,
     },
+    name: {
+      type: String,
+      required: true,
+      minLength: 3,
+    },
   },
   {
     timestamps: true,
