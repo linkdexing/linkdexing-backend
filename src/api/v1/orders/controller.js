@@ -5,7 +5,7 @@ const Order = require("./models/order.entity");
 // Create order
 exports.createOrder = async (req, res, next) => {
   try {
-    const { links, dripfeed, name } = req.body;
+    const { links, dripfeed, name="N/A" } = req.body;
     const { id } = req.user;
 
     // Total Number of links
