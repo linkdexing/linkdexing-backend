@@ -60,6 +60,9 @@ exports.processOrder = async (req, res, next) => {
         });
       }
 
+      if(!order.name){
+        order.name  = "N/A";
+      }
       order.isProcessed = true;
       await order.save();
     }
